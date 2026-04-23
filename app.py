@@ -7,9 +7,9 @@ import pickle
 import numpy as np
 import streamlit as st
 
-import streamlit as st
+import pickle
 
-st.write("App started successfully 🚀")
+columns = pickle.load(open('columns.pkl', 'rb'))
 
 # ──────────────────────────────────────────────────────────────────
 # Page configuration (MUST be first Streamlit call)
@@ -251,7 +251,7 @@ def load_model():
 try:
     model = load_model()
 except FileNotFoundError:
-    st.error(
+    st. error(
         "⚠️  **Model file not found.**  "
         "Please run `python train_model.py` first to generate `fraud_model.pkl`."
     )
@@ -337,67 +337,34 @@ with col4:
 predict_btn = st.button("🔍  ANALYSE TRANSACTION")
 
 if predict_btn:
-    # ── Encode inputs ──────────────────────────────────────────────
-    payment_encoded = PAYMENT_MAP[payment_method_str]
-    device_encoded  = DEVICE_MAP[device_used_str]
 
-    import pandas as pd
-    features = pd.DataFrame([[
-        transaction_amount,
-        account_age_days,
-        payment_encoded,
-        device_encoded,
-    ]], columns=["transaction_amount", "account_age_days", "payment_method", "device_used"])
+    input_dict = dict.fromkeys(columns, 0)
 
-    # ── Predict ────────────────────────────────────────────────────
-    prediction   = model.predict(features)[0]
-    probabilities = model.predict_proba(features)[0]   # [P(not fraud), P(fraud)]
-    fraud_prob   = probabilities[1]
-    safe_prob    = probabilities[0]
+    input_dict['Transaction Amount'] = transaction_amount
+    input_dict['Account Age Days'] = account_age
 
-    # ── Result card ────────────────────────────────────────────────
+    if payment_method == "Credit Card":
+        input_dict['Payment Method_credit card'] = 1
+    elif payment_method == "Debit Card":
+        input_dict['Payment Method_debit card'] = 1
+    elif payment_method == "UPI":
+        input_dict['Payment Method_upi'] = 1
+    elif payment_method == "Net Banking":
+        input_dict['Payment Method_net banking'] = 1
+
+    if device_used == "Mobile":
+        input_dict['Device Used_mobile'] = 1
+    elif device_used == "Tablet":
+        input_dict['Device Used_tablet'] = 1
+
+    input_df = pd.DataFrame([input_dict])
+
+    prediction = model.predict(input_df)[0]
+
     if prediction == 1:
-        st.markdown(f"""
-        <div class="result-card fraud">
-          <div class="verdict">🚨 Fraudulent Transaction</div>
-          <div class="sub">HIGH RISK · TRANSACTION FLAGGED FOR REVIEW</div>
-          <div class="prob-row">
-            <span class="prob-label">Fraud Risk</span>
-            <div class="prob-track">
-              <div class="prob-fill fraud-fill" style="width:{fraud_prob*100:.1f}%"></div>
-            </div>
-            <span class="prob-pct">{fraud_prob*100:.1f}%</span>
-          </div>
-          <div class="prob-row">
-            <span class="prob-label">Legitimate</span>
-            <div class="prob-track">
-              <div class="prob-fill safe-fill" style="width:{safe_prob*100:.1f}%"></div>
-            </div>
-            <span class="prob-pct">{safe_prob*100:.1f}%</span>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.error("🚨 Fraud Transaction")
     else:
-        st.markdown(f"""
-        <div class="result-card safe">
-          <div class="verdict">✅ Normal Transaction</div>
-          <div class="sub">LOW RISK · NO SUSPICIOUS ACTIVITY DETECTED</div>
-          <div class="prob-row">
-            <span class="prob-label">Legitimate</span>
-            <div class="prob-track">
-              <div class="prob-fill safe-fill" style="width:{safe_prob*100:.1f}%"></div>
-            </div>
-            <span class="prob-pct">{safe_prob*100:.1f}%</span>
-          </div>
-          <div class="prob-row">
-            <span class="prob-label">Fraud Risk</span>
-            <div class="prob-track">
-              <div class="prob-fill fraud-fill" style="width:{fraud_prob*100:.1f}%"></div>
-            </div>
-            <span class="prob-pct">{fraud_prob*100:.1f}%</span>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.success("✅ Normal Transaction")
 
     # ── Feature importance mini-chart ──────────────────────────────
     st.markdown('<p class="section-label" style="margin-top:2.5rem">Feature Importance</p>', unsafe_allow_html=True)
