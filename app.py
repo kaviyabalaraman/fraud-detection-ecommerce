@@ -38,30 +38,42 @@ device_used_str = st.selectbox(
 
 if st.button("🔍 ANALYSE TRANSACTION"):
 
-    input_df = pd.DataFrame(columns=columns)
-    input_df.loc[0] = 0
+    # Step 1: Create empty dataframe with exact columns
+    input_df = pd.DataFrame([0]*len(columns)).T
+    input_df.columns = columns
 
-    if 'Transaction Amount' in input_df.columns:
-        input_df.at[0, 'Transaction Amount'] = transaction_amount
+    # Step 2: Fill ONLY known fields (safe)
+    try:
+        input_df.loc[0, 'Transaction Amount'] = transaction_amount
+    except:
+        pass
 
-    if 'Account Age Days' in input_df.columns:
-        input_df.at[0, 'Account Age Days'] = account_age_days
+    try:
+        input_df.loc[0, 'Account Age Days'] = account_age_days
+    except:
+        pass
 
-    for col in input_df.columns:
-        if col.lower().startswith('payment method'):
-            if payment_method_str.lower() in col.lower():
-                input_df.at[0, col] = 1
+    # Step 3: Payment encoding
+    for col in columns:
+        if "payment" in col.lower() and payment_method_str.lower() in col.lower():
+            input_df.loc[0, col] = 1
 
-    for col in input_df.columns:
-        if col.lower().startswith('device used'):
-            if device_used_str.lower() in col.lower():
-                input_df.at[0, col] = 1
+    # Step 4: Device encoding
+    for col in columns:
+        if "device" in col.lower() and device_used_str.lower() in col.lower():
+            input_df.loc[0, col] = 1
 
-    input_df = input_df[columns]
+    # Step 5: Ensure correct order (CRITICAL)
+    input_df = input_df.reindex(columns=columns)
 
+    # Step 6: Predict
     prediction = model.predict(input_df)[0]
 
+    # Step 7: Output
     if prediction == 1:
         st.error("🚨 Fraud Transaction")
     else:
         st.success("✅ Normal Transaction")
+
+
+st.write(columns)
