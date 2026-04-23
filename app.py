@@ -39,34 +39,31 @@ device_used_str = st.selectbox(
 # Button
 if st.button("🔍 ANALYSE TRANSACTION"):
 
-    # Create input with all columns = 0
-    input_dict = {col: 0 for col in columns}
+   # Create dataframe with correct columns
+input_df = pd.DataFrame(columns=columns)
+input_df.loc[0] = 0
 
-    # Fill numeric safely
-    for col in columns:
-        if "transaction" in col.lower():
-            input_dict[col] = transaction_amount
-        if "account age" in col.lower():
-            input_dict[col] = account_age_days
+# Fill numeric values (ONLY if column exists)
+if 'Transaction Amount' in input_df.columns:
+    input_df.at[0, 'Transaction Amount'] = transaction_amount
 
-    # Fill payment dynamically
-    for col in columns:
+if 'Account Age Days' in input_df.columns:
+    input_df.at[0, 'Account Age Days'] = account_age_days
+
+# Payment encoding
+for col in input_df.columns:
+    if col.lower().startswith('payment method'):
         if payment_method_str.lower() in col.lower():
-            input_dict[col] = 1
+            input_df.at[0, col] = 1
 
-    # Fill device dynamically
-    for col in columns:
+# Device encoding
+for col in input_df.columns:
+    if col.lower().startswith('device used'):
         if device_used_str.lower() in col.lower():
-            input_dict[col] = 1
+            input_df.at[0, col] = 1
 
-    # Convert to dataframe
-    input_df = pd.DataFrame([input_dict])
+# FINAL SAFETY (very important)
+input_df = input_df[columns]
 
-    # Predict
-    prediction = model.predict(input_df)[0]
-
-    # Output
-    if prediction == 1:
-        st.error("🚨 Fraud Transaction")
-    else:
-        st.success("✅ Normal Transaction")
+# Predict
+prediction = model.predict(input_df)[0]
