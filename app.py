@@ -36,34 +36,32 @@ device_used_str = st.selectbox(
     ["Mobile", "Desktop"]
 )
 
-# Button
 if st.button("🔍 ANALYSE TRANSACTION"):
 
-   # Create dataframe with correct columns
-input_df = pd.DataFrame(columns=columns)
-input_df.loc[0] = 0
+    input_df = pd.DataFrame(columns=columns)
+    input_df.loc[0] = 0
 
-# Fill numeric values (ONLY if column exists)
-if 'Transaction Amount' in input_df.columns:
-    input_df.at[0, 'Transaction Amount'] = transaction_amount
+    if 'Transaction Amount' in input_df.columns:
+        input_df.at[0, 'Transaction Amount'] = transaction_amount
 
-if 'Account Age Days' in input_df.columns:
-    input_df.at[0, 'Account Age Days'] = account_age_days
+    if 'Account Age Days' in input_df.columns:
+        input_df.at[0, 'Account Age Days'] = account_age_days
 
-# Payment encoding
-for col in input_df.columns:
-    if col.lower().startswith('payment method'):
-        if payment_method_str.lower() in col.lower():
-            input_df.at[0, col] = 1
+    for col in input_df.columns:
+        if col.lower().startswith('payment method'):
+            if payment_method_str.lower() in col.lower():
+                input_df.at[0, col] = 1
 
-# Device encoding
-for col in input_df.columns:
-    if col.lower().startswith('device used'):
-        if device_used_str.lower() in col.lower():
-            input_df.at[0, col] = 1
+    for col in input_df.columns:
+        if col.lower().startswith('device used'):
+            if device_used_str.lower() in col.lower():
+                input_df.at[0, col] = 1
 
-# FINAL SAFETY (very important)
-input_df = input_df[columns]
+    input_df = input_df[columns]
 
-# Predict
-prediction = model.predict(input_df)[0]
+    prediction = model.predict(input_df)[0]
+
+    if prediction == 1:
+        st.error("🚨 Fraud Transaction")
+    else:
+        st.success("✅ Normal Transaction")
