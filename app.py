@@ -76,4 +76,3 @@ if st.button("🔍 ANALYSE TRANSACTION"):
         st.success("✅ Normal Transaction")
 
 
-st.write(columns)
